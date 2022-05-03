@@ -2,7 +2,9 @@
 name = "symbols"
 version = "0.1.0"
 edition = "2021"
-authors = ["Marco Napetti <nappa85@therocktrading.com>"]
+authors = ["Marco Napetti"]
+repository = "https://github.com/nappa85/symbols"
+readme = "README.md"
 license = "WTFPL"
 description = "Proc-macro utility to populate enums from database data"
 categories = ["proc-macro", "enum", "database"]
