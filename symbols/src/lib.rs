@@ -1,4 +1,4 @@
-use std::{collections::HashMap, env, future::Future, fs, io};
+use std::{collections::HashMap, env, fs, future::Future, io};
 
 use heck::{ToSnakeCase, ToUpperCamelCase};
 
@@ -9,8 +9,7 @@ use proc_macro2::{Ident, Literal, Span, TokenStream};
 use quote::quote;
 
 use sea_orm::{
-    DatabaseConnection, EntityTrait, Iterable, ModelTrait,
-    PrimaryKeyToColumn, QueryFilter, Value,
+    DatabaseConnection, EntityTrait, Iterable, ModelTrait, PrimaryKeyToColumn, QueryFilter, Value,
 };
 
 use serde::{de::DeserializeOwned, Serialize};
@@ -18,17 +17,20 @@ use serde::{de::DeserializeOwned, Serialize};
 use symbols_models::EntityFilter;
 
 use syn::{
-    punctuated::Punctuated, token::Comma, Fields, ItemEnum, Lit,
-    LitBool, Meta, NestedMeta, Variant,
+    punctuated::Punctuated, token::Comma, Fields, ItemEnum, Lit, LitBool, Meta, NestedMeta, Variant,
 };
 
-pub async fn symbols<M, F, Fut>(item: &mut ItemEnum, args: &[NestedMeta], get_conn: F) -> syn::Result<TokenStream>
+pub async fn symbols<M, F, Fut>(
+    item: &mut ItemEnum,
+    args: &[NestedMeta],
+    get_conn: F,
+) -> syn::Result<TokenStream>
 where
     M: EntityTrait + EntityFilter + Default,
     M::Model: Serialize + DeserializeOwned,
     M::Column: PartialEq,
     F: Fn() -> Fut,
-    Fut: Future<Output=syn::Result<DatabaseConnection>>,
+    Fut: Future<Output = syn::Result<DatabaseConnection>>,
 {
     let name = &item.ident;
     let primary_keys = M::PrimaryKey::iter()
@@ -451,7 +453,7 @@ where
     M: EntityTrait + EntityFilter + Default,
     M::Model: Serialize + DeserializeOwned,
     F: Fn() -> Fut,
-    Fut: Future<Output=syn::Result<DatabaseConnection>>,
+    Fut: Future<Output = syn::Result<DatabaseConnection>>,
 {
     let instance = M::default();
     let mut cache = env::current_dir().map_err(|e| {

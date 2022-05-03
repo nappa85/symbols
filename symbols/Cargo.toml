@@ -2,6 +2,11 @@
 name = "symbols"
 version = "0.1.0"
 edition = "2021"
+authors = ["Marco Napetti <nappa85@therocktrading.com>"]
+license = "WTFPL"
+description = "Proc-macro utility to populate enums from database data"
+categories = ["proc-macro", "enum", "database"]
+keywords = ["proc-macro", "enum", "database"]
 
 [dependencies]
 bincode = "1.3.3"

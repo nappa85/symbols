@@ -2,13 +2,9 @@ use std::time::Duration;
 
 use proc_macro2::{Span, TokenStream};
 
-use sea_orm::{
-    ConnectOptions, Database, DatabaseConnection,
-};
+use sea_orm::{ConnectOptions, Database, DatabaseConnection};
 
-use syn::{
-    parse_macro_input, AttributeArgs, ItemEnum, Lit, Meta, NestedMeta,
-};
+use syn::{parse_macro_input, AttributeArgs, ItemEnum, Lit, Meta, NestedMeta};
 
 use symbols::symbols;
 
@@ -30,7 +26,9 @@ pub fn example(
 async fn get_conn() -> syn::Result<DatabaseConnection> {
     let url = std::env::var("DATABASE_URL").map_err(|e| syn::Error::new(Span::call_site(), e))?;
     let mut options = ConnectOptions::new(url);
-    options.min_connections(1).max_connections(1)
+    options
+        .min_connections(1)
+        .max_connections(1)
         .connect_timeout(Duration::from_secs(1))
         .idle_timeout(Duration::from_secs(1));
     Database::connect(options)
