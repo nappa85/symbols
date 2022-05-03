@@ -1,0 +1,25 @@
+version: "3.3"
+services:
+  rust:
+    image: "rust:latest"
+    restart: "no"
+    depends_on:
+      - mariadb
+    working_dir: /app/example
+    volumes:
+      - ..:/app
+      - /app/example/target
+    environment:
+      DATABASE_URL: mysql://mariadb:mariadb@mariadb/example
+    command: "cargo test"
+    # command: "./docker-entrypoint.sh"
+  mariadb:
+    image: "mariadb:latest"
+    restart: "no"
+    environment:
+      MARIADB_ROOT_PASSWORD: reallystrongpassword
+      MARIADB_USER: mariadb
+      MARIADB_PASSWORD: mariadb
+      MARIADB_DATABASE: example
+    volumes:
+      - ./fixtures/mariadb:/docker-entrypoint-initdb.d

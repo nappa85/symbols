@@ -1,0 +1,10 @@
+[workspace]
+
+members = [
+    "symbols",
+    "symbols-models"
+]
+
+exclude = [
+    "example"
+]
