@@ -2,6 +2,11 @@
 name = "symbols-models"
 version = "0.1.0"
 edition = "2021"
+authors = ["Marco Napetti <nappa85@therocktrading.com>"]
+license = "WTFPL"
+description = "Proc-macro utility to populate enums from database data (shared traits)"
+categories = ["proc-macro", "enum", "database"]
+keywords = ["proc-macro", "enum", "database"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
