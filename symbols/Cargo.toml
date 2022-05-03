@@ -7,7 +7,7 @@ repository = "https://github.com/nappa85/symbols"
 readme = "../README.md"
 license = "WTFPL"
 description = "Proc-macro utility to populate enums from database data"
-categories = ["proc-macro", "enum", "database"]
+categories = ["data-structures", "development-tools::procedural-macro-helpers", "database"]
 keywords = ["proc-macro", "enum", "database"]
 
 [dependencies]
