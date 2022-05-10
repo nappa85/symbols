@@ -15,6 +15,7 @@ use sea_orm::{
 /// 
 /// Since only basic types are supported, it's importato to use only basic types in models.
 pub trait EntityFilter: EntityTrait + Default {
+    /// Returned expression in injected in data retrieve query to allow data filtering
     fn filter() -> SimpleExpr {
         Expr::val(1).eq(1)
     }
