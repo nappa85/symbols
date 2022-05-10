@@ -10,10 +10,10 @@ use sea_orm::{
     EntityTrait,
 };
 
-/// This trait allows data filtering on macro execution
+/// This trait allows data filtering on macro execution  
 /// It's default implementation simply adds WHERE 1 = 1 to data retrieve query
 /// 
-/// Since only basic types are supported, it's importato to use only basic types in models.
+/// Since only basic types are supported, it's important to use only basic types in models.
 pub trait EntityFilter: EntityTrait + Default {
     /// Returned expression in injected in data retrieve query to allow data filtering
     fn filter() -> SimpleExpr {

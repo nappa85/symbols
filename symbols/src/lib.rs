@@ -3,8 +3,8 @@
 
 //! # Symbols
 //! 
-//! This is an utility to build a proc-macro that connects to a database, retrieves data from given table and populates an enum variants with primary keys values.
-//! It also generates a method for every non-primary-key field, and, when there are multiple primary keys, a costructor for every possible subset of primary keys.
+//! This is an utility to build a proc-macro that connects to a database, retrieves data from given table and populates an enum variants with primary keys values  
+//! It also generates a method for every non-primary-key field, and, when there are multiple primary keys, a costructor for every possible subset of primary keys
 
 use std::{collections::HashMap, env, fs, future::Future, io};
 
@@ -28,17 +28,17 @@ use syn::{
     punctuated::Punctuated, token::Comma, Fields, ItemEnum, Lit, LitBool, Meta, NestedMeta, Variant,
 };
 
-/// Main function
+/// Main function  
 /// Given a database model (via generics), an enum item, a list of arguments and an async function to retrieve a database connection
-/// it populates the enum using primary key(s) values.
+/// it populates the enum using primary key(s) values.  
 /// Only string-typed primary keys are supported.
 /// 
-/// When a single primary key is present, it simply generate an as_str method and a TryFrom<&str> implementation.
+/// When a single primary key is present, it simply generate an as_str method and a TryFrom<&str> implementation.  
 /// When multiple primary keys are present, it generates a costructor for every possible subset of primary keys.
 /// 
 /// For every non-primary key field of a supported type, it generates a const method to retrieve it.
 /// 
-/// Replacements can be done on every string-typed field, even primary keys, and are done using annotated parameters.
+/// Replacements can be done on every string-typed field, even primary keys, and are done using annotated parameters.  
 /// Two type of replacements are supported:
 /// * basic: written in the form #[macro(field = "enum")] or #[macro(field(type = "enum"))], where we are telling to replace string values from `field` with variants from enum `enum`, variant names will be the CamelCase version of field value.
 /// * advanced: written in the form #[macro(field(type = "bar", fn = "foo"))], where we are telling to replace string values from `field` with a call to method `foo` from struct/enum `bar`, method output is expected to be of type `bar`.
