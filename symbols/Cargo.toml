@@ -1,9 +1,10 @@
 [package]
 name = "symbols"
-version = "0.1.2"
+version = "0.1.3"
 edition = "2021"
 authors = ["Marco Napetti"]
 repository = "https://github.com/nappa85/symbols"
+documentation = "https://docs.rs/symbols"
 readme = "../README.md"
 license = "WTFPL"
 description = "Proc-macro utility to populate enums from database data"
@@ -19,4 +20,4 @@ quote = "1.0.18"
 sea-orm = "0.8.0"
 serde = "1.0.137"
 syn = { version = "1.0.93", features = ["full"] }
-symbols-models = "0.1.2"
+symbols-models = "0.1.3"

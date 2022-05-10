@@ -2,7 +2,7 @@ use sea_orm::entity::prelude::*;
 
 use serde::{Deserialize, Serialize};
 
-use symbols_models::EntityFilter;
+use symbols::EntityFilter;
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Deserialize, Serialize)]
 #[sea_orm(table_name = "best_selling_video_games")]
