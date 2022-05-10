@@ -12,7 +12,6 @@ services:
     environment:
       DATABASE_URL: mysql://mariadb:mariadb@mariadb/example
     command: "cargo test"
-    # command: "./docker-entrypoint.sh"
   mariadb:
     image: "mariadb:latest"
     restart: "no"

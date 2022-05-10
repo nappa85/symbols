@@ -8,12 +8,11 @@ edition = "2021"
 proc-macro = true
 
 [dependencies]
-chrono = "0.4.19"
-proc-macro2 = { version = "1.0.37", default-features = false }
-quote = "1.0.17"
-sea-orm = { version = "0.7.1", features = ["sqlx-mysql", "runtime-tokio-rustls"] }
+proc-macro2 = { version = "1.0.38", default-features = false }
+quote = "1.0.18"
+sea-orm = { version = "0.8.0", features = ["sqlx-mysql", "runtime-tokio-rustls"] }
 serde = { version = "1.0.137", features = ["derive"] }
-syn = { version = "1.0.91", features = ["full"] }
-symbols = { path = "../symbols" }
-symbols-models = { path = "../symbols-models" }
-tokio = "1.17.0"
+syn = { version = "1.0.93", features = ["full"] }
+symbols = "0.1.2"
+symbols-models = "0.1.2"
+tokio = "1.18.2"

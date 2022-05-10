@@ -59,7 +59,9 @@ fn get_enum(item: &mut ItemEnum, args: &[NestedMeta]) -> syn::Result<TokenStream
         .unwrap()
         .block_on(async move {
             match table.as_str() {
-                "example" => symbols::<model::Entity, _, _>(item, args, get_conn).await,
+                "best_selling_video_games" => {
+                    symbols::<model::Entity, _, _>(item, args, get_conn).await
+                }
                 _ => Err(syn::Error::new(
                     Span::call_site(),
                     format!("Unrecognized table \"{}\"", table),

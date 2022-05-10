@@ -1,5 +1,3 @@
-use chrono::NaiveDateTime;
-
 use sea_orm::entity::prelude::*;
 
 use serde::{Deserialize, Serialize};
@@ -7,13 +5,17 @@ use serde::{Deserialize, Serialize};
 use symbols_models::EntityFilter;
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Deserialize, Serialize)]
-#[sea_orm(table_name = "example")]
+#[sea_orm(table_name = "best_selling_video_games")]
 pub struct Model {
+    pub rank: i8,
     #[sea_orm(primary_key, auto_increment = false)]
     pub name: String,
-    pub kind: String,
-    pub created_at: NaiveDateTime,
-    pub updated_at: NaiveDateTime,
+    pub sales: String,
+    pub series: String,
+    pub platforms: String,
+    pub initial_release_date: String,
+    pub developer: String,
+    pub publisher: String,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
@@ -27,10 +29,14 @@ impl PartialEq for Column {
     fn eq(&self, other: &Self) -> bool {
         matches!(
             (self, other),
-            (Column::Name, Column::Name)
-                | (Column::Kind, Column::Kind)
-                | (Column::CreatedAt, Column::CreatedAt)
-                | (Column::UpdatedAt, Column::UpdatedAt)
+            (Column::Rank, Column::Rank)
+                | (Column::Name, Column::Name)
+                | (Column::Sales, Column::Sales)
+                | (Column::Series, Column::Series)
+                | (Column::Platforms, Column::Platforms)
+                | (Column::InitialReleaseDate, Column::InitialReleaseDate)
+                | (Column::Developer, Column::Developer)
+                | (Column::Publisher, Column::Publisher)
         )
     }
 }
