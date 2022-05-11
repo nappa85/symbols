@@ -25,7 +25,7 @@ find ~/.cargo/git -name *.cache -delete
 
 ### Examples
 
-You can find a basic example in [example](./example)) folder, it uses a mariadb container to load a database, you can run it with:
+You can find a basic example in [example](./example) folder, it uses a mariadb container to load a database, you can run it with:
 ```bash
 docker-compose run rust
 ```
