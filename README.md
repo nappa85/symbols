@@ -25,11 +25,21 @@ find ~/.cargo/git -name *.cache -delete
 
 ### Examples
 
-You can find a basic example in `example` folder, it uses a mariadb container to load a database, you can run it with:
+You can find a basic example in [example](https://www.githuub.com(nappa85/symbols/example)) folder, it uses a mariadb container to load a database, you can run it with:
 ```bash
 docker-compose run rust
 ```
-Example code would expand to:
+Example code
+```rust
+#[example::example(
+    table = "best_selling_video_games",
+    platforms(type = "Platforms", fn = "from_str"),
+    developer = "Developer",
+    publisher(type = "Publisher", fn = "from_str")
+)]
+pub enum BestSellingVideoGame {}
+```
+would expand to
 ```rust
 use std::fmt;
 
