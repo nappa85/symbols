@@ -49,7 +49,7 @@ impl Platforms {
                 Platforms(&[Platform::WiiU, Platform::NintendoSwitch])
             }
             b"Xbox 360" => Platforms(&[Platform::Xbox360]),
-            _ => panic!("{}", s),
+            _ => unreachable!(),
         }
     }
 }
@@ -128,7 +128,7 @@ impl Publisher {
             b"Rockstar Games" => Publisher::RockstarGames,
             b"Sega" => Publisher::Sega,
             b"Xbox Game Studios" => Publisher::XboxGameStudios,
-            _ => panic!("{}", s),
+            _ => unreachable!(),
         }
     }
 }
