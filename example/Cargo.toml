@@ -13,5 +13,5 @@ quote = "1.0.18"
 sea-orm = { version = "0.8.0", features = ["sqlx-mysql", "runtime-tokio-rustls"] }
 serde = { version = "1.0.137", features = ["derive"] }
 syn = { version = "1.0.93", features = ["full"] }
-symbols = "0.1.5"
+symbols = "0.1.6"
 tokio = "1.18.2"
