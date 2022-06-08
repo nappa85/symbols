@@ -1,6 +1,6 @@
 [package]
 name = "symbols"
-version = "0.1.4"
+version = "0.1.5"
 edition = "2021"
 authors = ["Marco Napetti"]
 repository = "https://github.com/nappa85/symbols"
@@ -20,4 +20,5 @@ quote = "1.0.18"
 sea-orm = "0.8.0"
 serde = "1.0.137"
 syn = { version = "1.0.93", features = ["full"] }
-symbols-models = "0.1.4"
+symbols-models = "0.1.5"
+tracing = "0.1.34"

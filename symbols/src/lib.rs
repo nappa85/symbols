@@ -28,6 +28,8 @@ use syn::{
     punctuated::Punctuated, token::Comma, Fields, ItemEnum, Lit, LitBool, Meta, NestedMeta, Variant,
 };
 
+use tracing::debug;
+
 /// Main function  
 /// Given a database model (via generics), an enum item, a list of arguments and an async function to retrieve a database connection
 /// it populates the enum using primary key(s) values.  
@@ -485,12 +487,14 @@ where
     let mut cache = env::current_dir().map_err(|e| {
         syn::Error::new(
             Span::call_site(),
-            format!("Error retroeving current directory: {}", e),
+            format!("Error retrieving current directory: {}", e),
         )
     })?;
     cache.push(instance.table_name());
     cache.set_extension("cache");
     if cache.exists() {
+        debug!("Using already existing cache file {}", cache.display());
+
         let file = fs::File::open(&cache).map_err(|e| {
             syn::Error::new(
                 Span::call_site(),
@@ -504,6 +508,8 @@ where
             )
         })
     } else {
+        debug!("Creating new cache file {}", cache.display());
+
         let conn = get_conn().await?;
         let data = M::find()
             .filter(M::filter())
