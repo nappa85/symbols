@@ -28,6 +28,8 @@ use syn::{
     punctuated::Punctuated, token::Comma, Fields, ItemEnum, Lit, LitBool, Meta, NestedMeta, Variant,
 };
 
+use tracing::info;
+
 /// Main function  
 /// Given a database model (via generics), an enum item, a list of arguments and an async function to retrieve a database connection
 /// it populates the enum using primary key(s) values.  
@@ -486,6 +488,8 @@ where
     cache.push(instance.table_name());
     cache.set_extension("cache");
     if cache.exists() {
+        info!("Cache file {} exists, loading data from there", cache.display());
+
         let file = fs::File::open(&cache).map_err(|e| {
             syn::Error::new(
                 Span::call_site(),
@@ -499,6 +503,8 @@ where
             )
         })
     } else {
+        info!("Cache file {} doesn't exists, creating", cache.display());
+
         let conn = get_conn().await?;
         let data = M::find()
             .filter(M::filter())
