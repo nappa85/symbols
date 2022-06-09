@@ -16,11 +16,10 @@ Advanced replacements are done in the form `#[macro(field(type = "bar", fn = "fo
 
 ### Cache
 
-To avoid flooding the database with requests, light up macro run times and be able to work offline, data cache files are stored in crate folder under the name of `<table>.cache`.<br />
-What does crate folder means? Well, if you're working directly on this crate, you'll find cache files in crate folder. If you're using this crate as a dependency of your project, you'll find cache files in cargo home folder, under git/checkouts folders (e.g. `~/.cargo/git/checkouts/symbols-3627ca5bd9a20120/4e682cf/<table>.cache`).<br />
+To avoid flooding the database with requests, light up macro run times and be able to work offline, data cache files are stored in temp folder under the name of `<table>.cache`.<br />
 Quick way to delete it is to run
 ```bash
-find ~/.cargo/git -name *.cache -delete
+find /tmp -name *.cache -delete
 ```
 
 ### Examples

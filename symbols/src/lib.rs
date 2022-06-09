@@ -482,17 +482,10 @@ where
     Fut: Future<Output = syn::Result<DatabaseConnection>>,
 {
     let instance = M::default();
-    let mut cache = env::current_dir().map_err(|e| {
-        syn::Error::new(
-            Span::call_site(),
-            format!("Error retrieving current directory: {}", e),
-        )
-    })?;
+    let mut cache = env::temp_dir();
     cache.push(instance.table_name());
     cache.set_extension("cache");
     if cache.exists() {
-        println!("Using already existing cache file {}", cache.display());
-
         let file = fs::File::open(&cache).map_err(|e| {
             syn::Error::new(
                 Span::call_site(),
@@ -506,8 +499,6 @@ where
             )
         })
     } else {
-        println!("Creating new cache file {}", cache.display());
-
         let conn = get_conn().await?;
         let data = M::find()
             .filter(M::filter())
