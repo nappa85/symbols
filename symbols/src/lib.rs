@@ -2,7 +2,7 @@
 #![deny(missing_docs)]
 
 //! # Symbols
-//! 
+//!
 //! This is an utility to build a proc-macro that connects to a database, retrieves data from given table and populates an enum variants with primary keys values  
 //! It also generates a method for every non-primary-key field, and, when there are multiple primary keys, a costructor for every possible subset of primary keys
 
@@ -28,18 +28,18 @@ use syn::{
     punctuated::Punctuated, token::Comma, Fields, ItemEnum, Lit, LitBool, Meta, NestedMeta, Variant,
 };
 
-use tracing::info;
+use tracing::{error, info};
 
 /// Main function  
 /// Given a database model (via generics), an enum item, a list of arguments and an async function to retrieve a database connection
 /// it populates the enum using primary key(s) values.  
 /// Only string-typed primary keys are supported.
-/// 
+///
 /// When a single primary key is present, it simply generate an as_str method and a TryFrom<&str> implementation.  
 /// When multiple primary keys are present, it generates a costructor for every possible subset of primary keys.
-/// 
+///
 /// For every non-primary key field of a supported type, it generates a const method to retrieve it.
-/// 
+///
 /// Replacements can be done on every string-typed field, even primary keys, and are done using annotated parameters.  
 /// Two type of replacements are supported:
 /// * basic: written in the form #[macro(field = "enum")] or #[macro(field(type = "enum"))], where we are telling to replace string values from `field` with variants from enum `enum`, variant names will be the CamelCase version of field value.
@@ -488,7 +488,10 @@ where
     cache.push(instance.table_name());
     cache.set_extension("cache");
     if cache.exists() {
-        info!("Cache file {} exists, loading data from there", cache.display());
+        info!(
+            "Cache file {} exists, loading data from there",
+            cache.display()
+        );
 
         let file = fs::File::open(&cache).map_err(|e| {
             syn::Error::new(
@@ -496,33 +499,32 @@ where
                 format!("Error reading {}: {}", cache.display(), e),
             )
         })?;
-        bincode::deserialize_from(io::BufReader::new(file)).map_err(|e| {
-            syn::Error::new(
-                Span::call_site(),
-                format!("Error deserializing {}: {}", cache.display(), e),
-            )
-        })
+
+        match bincode::deserialize_from(io::BufReader::new(file)) {
+            Ok(data) => return Ok(data),
+            Err(e) => error!("Error deserializing {}: {}", cache.display(), e),
+        }
     } else {
         info!("Cache file {} doesn't exists, creating", cache.display());
-
-        let conn = get_conn().await?;
-        let data = M::find()
-            .filter(M::filter())
-            .all(&conn)
-            .await
-            .map_err(|e| syn::Error::new(Span::call_site(), e))?;
-        let buf = bincode::serialize(&data).map_err(|e| {
-            syn::Error::new(
-                Span::call_site(),
-                format!("Error serializing {}: {}", cache.display(), e),
-            )
-        })?;
-        fs::write(&cache, buf).map_err(|e| {
-            syn::Error::new(
-                Span::call_site(),
-                format!("Error writing {}: {}", cache.display(), e),
-            )
-        })?;
-        Ok(data)
     }
+
+    let conn = get_conn().await?;
+    let data = M::find()
+        .filter(M::filter())
+        .all(&conn)
+        .await
+        .map_err(|e| syn::Error::new(Span::call_site(), e))?;
+    let buf = bincode::serialize(&data).map_err(|e| {
+        syn::Error::new(
+            Span::call_site(),
+            format!("Error serializing {}: {}", cache.display(), e),
+        )
+    })?;
+    fs::write(&cache, buf).map_err(|e| {
+        syn::Error::new(
+            Span::call_site(),
+            format!("Error writing {}: {}", cache.display(), e),
+        )
+    })?;
+    Ok(data)
 }
