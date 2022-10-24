@@ -16,17 +16,13 @@ use proc_macro2::{Ident, Literal, Span, TokenStream};
 
 use quote::quote;
 
-use sea_orm::{
-    DatabaseConnection, EntityTrait, Iterable, ModelTrait, PrimaryKeyToColumn, QueryFilter, Value,
-};
+use sea_orm::{DatabaseConnection, EntityTrait, Iterable, ModelTrait, PrimaryKeyToColumn, QueryFilter, Value};
 
 use serde::{de::DeserializeOwned, Serialize};
 
 pub use symbols_models::EntityFilter;
 
-use syn::{
-    punctuated::Punctuated, token::Comma, Fields, ItemEnum, Lit, LitBool, Meta, NestedMeta, Variant,
-};
+use syn::{punctuated::Punctuated, token::Comma, Fields, ItemEnum, Lit, LitBool, Meta, NestedMeta, Variant};
 
 use tracing::{error, info};
 
@@ -44,11 +40,7 @@ use tracing::{error, info};
 /// Two type of replacements are supported:
 /// * basic: written in the form #[macro(field = "enum")] or #[macro(field(type = "enum"))], where we are telling to replace string values from `field` with variants from enum `enum`, variant names will be the CamelCase version of field value.
 /// * advanced: written in the form #[macro(field(type = "bar", fn = "foo"))], where we are telling to replace string values from `field` with a call to method `foo` from struct/enum `bar`, method output is expected to be of type `bar`.
-pub async fn symbols<M, F, Fut>(
-    item: &mut ItemEnum,
-    args: &[NestedMeta],
-    get_conn: F,
-) -> syn::Result<TokenStream>
+pub async fn symbols<M, F, Fut>(item: &mut ItemEnum, args: &[NestedMeta], get_conn: F) -> syn::Result<TokenStream>
 where
     M: EntityTrait + EntityFilter + Default,
     M::Model: Serialize + DeserializeOwned,
@@ -57,9 +49,7 @@ where
     Fut: Future<Output = syn::Result<DatabaseConnection>>,
 {
     let name = &item.ident;
-    let primary_keys = M::PrimaryKey::iter()
-        .map(|k| k.into_column())
-        .collect::<Vec<_>>();
+    let primary_keys = M::PrimaryKey::iter().map(|k| k.into_column()).collect::<Vec<_>>();
 
     let mut constructors = HashMap::new();
     let mut methods = HashMap::new();
@@ -82,31 +72,22 @@ where
                         let key = Ident::new(&s.to_upper_camel_case(), Span::call_site());
                         let v = Literal::string(s.as_str());
 
-                        let (_, method, _) =
-                            methods.entry(String::from("as_str")).or_insert_with(|| {
-                                (
-                                    quote! { &'static str },
-                                    Punctuated::<_, Comma>::new(),
-                                    false,
-                                )
-                            });
+                        let (_, method, _) = methods
+                            .entry(String::from("as_str"))
+                            .or_insert_with(|| (quote! { &'static str }, Punctuated::<_, Comma>::new(), false));
                         method.push(quote! {
                             #name::#key => #v
                         });
 
-                        let (_, method, _) =
-                            methods.entry(String::from("try_from")).or_insert_with(|| {
-                                (quote! { () }, Punctuated::<_, Comma>::new(), false)
-                            });
+                        let (_, method, _) = methods
+                            .entry(String::from("try_from"))
+                            .or_insert_with(|| (quote! { () }, Punctuated::<_, Comma>::new(), false));
                         method.push(quote! {
                             #v => Ok(#name::#key)
                         });
                     }
                 } else {
-                    return Err(syn::Error::new(
-                        Span::call_site(),
-                        format!("Unrecognized value type {:?}", val),
-                    ));
+                    return Err(syn::Error::new(Span::call_site(), format!("Unrecognized value type {:?}", val)));
                 }
             }
             // push primary keys into enum variants
@@ -127,16 +108,10 @@ where
                             .map(|(_, col)| format!("{:?}", col).to_snake_case())
                             .collect::<Vec<_>>()
                             .join("_and_");
-                        let key = combo
-                            .iter()
-                            .map(|(index, _)| key_s[*index].clone())
-                            .collect::<Vec<_>>();
-                        let (_, method) = constructors
-                            .entry(method)
-                            .or_insert_with(|| (cols, HashMap::new()));
-                        let (_, idents) = method
-                            .entry(key.join("_"))
-                            .or_insert_with(|| (key, Punctuated::<_, Comma>::new()));
+                        let key = combo.iter().map(|(index, _)| key_s[*index].clone()).collect::<Vec<_>>();
+                        let (_, method) = constructors.entry(method).or_insert_with(|| (cols, HashMap::new()));
+                        let (_, idents) =
+                            method.entry(key.join("_")).or_insert_with(|| (key, Punctuated::<_, Comma>::new()));
                         idents.push(quote! { #name::#key_ident });
                     }
                 }
@@ -264,9 +239,8 @@ where
                     // Value::ChronoDateTime(dt) => (quote! { chrono::NaiveDateTime }, Lit::Verbatim(Literal)),
                     _ => continue,
                 };
-                let (_, method, option) = methods
-                    .entry(format!("{:?}", col))
-                    .or_insert_with(|| (t, Punctuated::<_, Comma>::new(), false));
+                let (_, method, option) =
+                    methods.entry(format!("{:?}", col)).or_insert_with(|| (t, Punctuated::<_, Comma>::new(), false));
                 if let Some(v) = value {
                     method.push(quote! {
                         #name::#key_ident => #v
@@ -287,8 +261,7 @@ where
         let signature = cols
             .iter()
             .map(|col| {
-                let field_name =
-                    Ident::new(&format!("{:?}", col).to_snake_case(), Span::call_site());
+                let field_name = Ident::new(&format!("{:?}", col).to_snake_case(), Span::call_site());
                 match get_replacement::<M>(*col, args) {
                     Some(Replacement::Type(r)) => quote! { #field_name: #r },
                     _ => quote! { #field_name: &str },
@@ -298,8 +271,7 @@ where
         let m = cols
             .iter()
             .map(|col| {
-                let field_name =
-                    Ident::new(&format!("{:?}", col).to_snake_case(), Span::call_site());
+                let field_name = Ident::new(&format!("{:?}", col).to_snake_case(), Span::call_site());
                 quote! { #field_name }
             })
             .collect::<Punctuated<_, Comma>>();
@@ -311,8 +283,7 @@ where
                     .enumerate()
                     .map(|(index, col)| match get_replacement::<M>(*col, args) {
                         Some(Replacement::Type(r)) => {
-                            let ident =
-                                Ident::new(&values[index].to_upper_camel_case(), Span::call_site());
+                            let ident = Ident::new(&values[index].to_upper_camel_case(), Span::call_site());
                             quote! { #r::#ident }
                         }
                         _ => {
@@ -488,17 +459,10 @@ where
     cache.push(instance.table_name());
     cache.set_extension("cache");
     if cache.exists() {
-        info!(
-            "Cache file {} exists, loading data from there",
-            cache.display()
-        );
+        info!("Cache file {} exists, loading data from there", cache.display());
 
-        let file = fs::File::open(&cache).map_err(|e| {
-            syn::Error::new(
-                Span::call_site(),
-                format!("Error reading {}: {}", cache.display(), e),
-            )
-        })?;
+        let file = fs::File::open(&cache)
+            .map_err(|e| syn::Error::new(Span::call_site(), format!("Error reading {}: {}", cache.display(), e)))?;
 
         match bincode::deserialize_from(io::BufReader::new(file)) {
             Ok(data) => return Ok(data),
@@ -509,22 +473,10 @@ where
     }
 
     let conn = get_conn().await?;
-    let data = M::find()
-        .filter(M::filter())
-        .all(&conn)
-        .await
-        .map_err(|e| syn::Error::new(Span::call_site(), e))?;
-    let buf = bincode::serialize(&data).map_err(|e| {
-        syn::Error::new(
-            Span::call_site(),
-            format!("Error serializing {}: {}", cache.display(), e),
-        )
-    })?;
-    fs::write(&cache, buf).map_err(|e| {
-        syn::Error::new(
-            Span::call_site(),
-            format!("Error writing {}: {}", cache.display(), e),
-        )
-    })?;
+    let data = M::find().filter(M::filter()).all(&conn).await.map_err(|e| syn::Error::new(Span::call_site(), e))?;
+    let buf = bincode::serialize(&data)
+        .map_err(|e| syn::Error::new(Span::call_site(), format!("Error serializing {}: {}", cache.display(), e)))?;
+    fs::write(&cache, buf)
+        .map_err(|e| syn::Error::new(Span::call_site(), format!("Error writing {}: {}", cache.display(), e)))?;
     Ok(data)
 }
