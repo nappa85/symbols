@@ -1,6 +1,6 @@
 [package]
 name = "symbols"
-version = "0.9.0"
+version = "0.10.0"
 edition = "2021"
 authors = ["Marco Napetti"]
 repository = "https://github.com/nappa85/symbols"

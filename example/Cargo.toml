@@ -14,6 +14,6 @@ quote = "1.0.20"
 sea-orm = { git = "https://github.com/nappa85/sea-orm.git", features = ["sqlx-mysql", "runtime-tokio-rustls"] }
 serde = { version = "1.0.139", features = ["derive"] }
 syn = { version = "1.0.98", features = ["full"] }
-#symbols = "0.9.0"
+#symbols = "0.10.0"
 symbols = { git = "https://github.com/nappa85/symbols.git", branch = "fork" }
 tokio = "1.20.0"

@@ -17,8 +17,7 @@ use proc_macro2::{Ident, Literal, Span, TokenStream};
 use quote::quote;
 
 use sea_orm::{
-    sea_query::IntoCondition, DatabaseConnection, EntityName, EntityTrait, Iterable, ModelTrait, PrimaryKeyToColumn,
-    QueryFilter, Value,
+    DatabaseConnection, EntityName, EntityTrait, Iterable, ModelTrait, PrimaryKeyToColumn, QueryFilter, Value,
 };
 
 use serde::{de::DeserializeOwned, Serialize};
@@ -59,203 +58,201 @@ where
 
     let data = get_data::<M, _, _>(get_conn).await?;
 
-    data.iter()
-        .map(|v| {
-            let mut key_s = vec![];
+    data.iter().try_for_each(|v| {
+        let mut key_s = vec![];
 
-            // scan primary keys
-            for k in &primary_keys {
-                let val = v.get(*k);
-                // only string values are accepted
-                if let Value::String(Some(s)) = val {
-                    key_s.push(s.to_upper_camel_case());
+        // scan primary keys
+        for k in &primary_keys {
+            let val = v.get(*k);
+            // only string values are accepted
+            if let Value::String(Some(s)) = val {
+                key_s.push(s.to_upper_camel_case());
 
-                    // if we have a single primary key, create a method as_str and a counter-trait-impl TryFrom<&str>
-                    if primary_keys.len() == 1 {
-                        let key = Ident::new(&s.to_upper_camel_case(), Span::call_site());
-                        let v = Literal::string(s.as_str());
+                // if we have a single primary key, create a method as_str and a counter-trait-impl TryFrom<&str>
+                if primary_keys.len() == 1 {
+                    let key = Ident::new(&s.to_upper_camel_case(), Span::call_site());
+                    let v = Literal::string(s.as_str());
 
-                        let (_, method, _) = methods
-                            .entry(String::from("as_str"))
-                            .or_insert_with(|| (quote! { &'static str }, Punctuated::<_, Comma>::new(), false));
-                        method.push(quote! {
-                            #name::#key => #v
-                        });
-
-                        let (_, method, _) = methods
-                            .entry(String::from("try_from"))
-                            .or_insert_with(|| (quote! { () }, Punctuated::<_, Comma>::new(), false));
-                        method.push(quote! {
-                            #v => Ok(#name::#key)
-                        });
-                    }
-                } else {
-                    return Err(syn::Error::new(Span::call_site(), format!("Unrecognized value type {:?}", val)));
-                }
-            }
-            // push primary keys into enum variants
-            let key_ident = Ident::new(&key_s.join("_"), Span::call_site());
-            item.variants.push(Variant {
-                attrs: vec![],
-                ident: key_ident.clone(),
-                fields: Fields::Unit,
-                discriminant: None,
-            });
-            // generate constructors for every combination of primary keys
-            if primary_keys.len() > 1 {
-                for n in 1..=primary_keys.len() {
-                    for combo in primary_keys.iter().enumerate().combinations(n) {
-                        let cols = combo.iter().map(|(_, col)| **col).collect::<Vec<_>>();
-                        let method = combo
-                            .iter()
-                            .map(|(_, col)| format!("{:?}", col).to_snake_case())
-                            .collect::<Vec<_>>()
-                            .join("_and_");
-                        let key = combo.iter().map(|(index, _)| key_s[*index].clone()).collect::<Vec<_>>();
-                        let (_, method) = constructors.entry(method).or_insert_with(|| (cols, HashMap::new()));
-                        let (_, idents) =
-                            method.entry(key.join("_")).or_insert_with(|| (key, Punctuated::<_, Comma>::new()));
-                        idents.push(quote! { #name::#key_ident });
-                    }
-                }
-            }
-
-            // create a method for every non-primary_key column
-            for col in <M as EntityTrait>::Column::iter() {
-                let replace = get_replacement::<M>(col, args);
-
-                // skip self-describing methods (would be an as_str clone)
-                if primary_keys.len() == 1 && primary_keys.contains(&col) && replace.is_none() {
-                    continue;
-                }
-
-                // keep only managed data types
-                let (t, value) = match v.get(col) {
-                    Value::Bool(b) => (
-                        quote! { bool },
-                        b.map(|b| {
-                            let v = LitBool::new(b, Span::call_site());
-                            quote! { #v }
-                        }),
-                    ),
-                    Value::TinyInt(n) => (
-                        quote! { i8 },
-                        n.map(|n| {
-                            let v = Literal::i8_unsuffixed(n);
-                            quote! { #v }
-                        }),
-                    ),
-                    Value::SmallInt(n) => (
-                        quote! { i16 },
-                        n.map(|n| {
-                            let v = Literal::i16_unsuffixed(n);
-                            quote! { #v }
-                        }),
-                    ),
-                    Value::Int(n) => (
-                        quote! { i32 },
-                        n.map(|n| {
-                            let v = Literal::i32_unsuffixed(n);
-                            quote! { #v }
-                        }),
-                    ),
-                    Value::BigInt(n) => (
-                        quote! { i64 },
-                        n.map(|n| {
-                            let v = Literal::i64_unsuffixed(n);
-                            quote! { #v }
-                        }),
-                    ),
-                    Value::TinyUnsigned(n) => (
-                        quote! { u8 },
-                        n.map(|n| {
-                            let v = Literal::u8_unsuffixed(n);
-                            quote! { #v }
-                        }),
-                    ),
-                    Value::SmallUnsigned(n) => (
-                        quote! { u16 },
-                        n.map(|n| {
-                            let v = Literal::u16_unsuffixed(n);
-                            quote! { #v }
-                        }),
-                    ),
-                    Value::Unsigned(n) => (
-                        quote! { u32 },
-                        n.map(|n| {
-                            let v = Literal::u32_unsuffixed(n);
-                            quote! { #v }
-                        }),
-                    ),
-                    Value::BigUnsigned(n) => (
-                        quote! { u64 },
-                        n.map(|n| {
-                            let v = Literal::u64_unsuffixed(n);
-                            quote! { #v }
-                        }),
-                    ),
-                    Value::Float(n) => (
-                        quote! { f32 },
-                        n.map(|n| {
-                            let v = Literal::f32_unsuffixed(n);
-                            quote! { #v }
-                        }),
-                    ),
-                    Value::Double(n) => (
-                        quote! { f64 },
-                        n.map(|n| {
-                            let v = Literal::f64_unsuffixed(n);
-                            quote! { #v }
-                        }),
-                    ),
-                    Value::String(s) => match replace {
-                        Some(Replacement::Type(r)) => (
-                            r.clone(),
-                            s.map(|s| {
-                                let ident = Ident::new(&s.to_upper_camel_case(), Span::call_site());
-                                quote! { #r::#ident }
-                            }),
-                        ),
-                        Some(Replacement::Fn(f, Some(r))) => (
-                            r.clone(),
-                            s.map(|s| {
-                                let v = Literal::string(s.as_str());
-                                quote! { #r::#f(#v) }
-                            }),
-                        ),
-                        Some(Replacement::Fn(_, None)) => {
-                            // teoretically we could accept only a function, but we won't know the return type
-                            return Err(syn::Error::new(
-                                Span::call_site(),
-                                format!("Missing parameter type for field {:?}", col),
-                            ));
-                        }
-                        _ => (
-                            quote! { &'static str },
-                            s.map(|s| {
-                                let v = Literal::string(s.as_str());
-                                quote! { #v }
-                            }),
-                        ),
-                    },
-                    // disable ChronoDateTime for now, it would only produce methods for created_at and updated_at fields
-                    // Value::ChronoDateTime(dt) => (quote! { chrono::NaiveDateTime }, Lit::Verbatim(Literal)),
-                    _ => continue,
-                };
-                let (_, method, option) =
-                    methods.entry(format!("{:?}", col)).or_insert_with(|| (t, Punctuated::<_, Comma>::new(), false));
-                if let Some(v) = value {
+                    let (_, method, _) = methods
+                        .entry(String::from("as_str"))
+                        .or_insert_with(|| (quote! { &'static str }, Punctuated::<_, Comma>::new(), false));
                     method.push(quote! {
-                        #name::#key_ident => #v
+                        #name::#key => #v
                     });
-                } else {
-                    *option = true;
+
+                    let (_, method, _) = methods
+                        .entry(String::from("try_from"))
+                        .or_insert_with(|| (quote! { () }, Punctuated::<_, Comma>::new(), false));
+                    method.push(quote! {
+                        #v => Ok(#name::#key)
+                    });
+                }
+            } else {
+                return Err(syn::Error::new(Span::call_site(), format!("Unrecognized value type {:?}", val)));
+            }
+        }
+        // push primary keys into enum variants
+        let key_ident = Ident::new(&key_s.join("_"), Span::call_site());
+        item.variants.push(Variant {
+            attrs: vec![],
+            ident: key_ident.clone(),
+            fields: Fields::Unit,
+            discriminant: None,
+        });
+        // generate constructors for every combination of primary keys
+        if primary_keys.len() > 1 {
+            for n in 1..=primary_keys.len() {
+                for combo in primary_keys.iter().enumerate().combinations(n) {
+                    let cols = combo.iter().map(|(_, col)| **col).collect::<Vec<_>>();
+                    let method = combo
+                        .iter()
+                        .map(|(_, col)| format!("{:?}", col).to_snake_case())
+                        .collect::<Vec<_>>()
+                        .join("_and_");
+                    let key = combo.iter().map(|(index, _)| key_s[*index].clone()).collect::<Vec<_>>();
+                    let (_, method) = constructors.entry(method).or_insert_with(|| (cols, HashMap::new()));
+                    let (_, idents) =
+                        method.entry(key.join("_")).or_insert_with(|| (key, Punctuated::<_, Comma>::new()));
+                    idents.push(quote! { #name::#key_ident });
                 }
             }
+        }
 
-            Ok(())
-        })
-        .collect::<syn::Result<()>>()?;
+        // create a method for every non-primary_key column
+        for col in <M as EntityTrait>::Column::iter() {
+            let replace = get_replacement::<M>(col, args);
+
+            // skip self-describing methods (would be an as_str clone)
+            if primary_keys.len() == 1 && primary_keys.contains(&col) && replace.is_none() {
+                continue;
+            }
+
+            // keep only managed data types
+            let (t, value) = match v.get(col) {
+                Value::Bool(b) => (
+                    quote! { bool },
+                    b.map(|b| {
+                        let v = LitBool::new(b, Span::call_site());
+                        quote! { #v }
+                    }),
+                ),
+                Value::TinyInt(n) => (
+                    quote! { i8 },
+                    n.map(|n| {
+                        let v = Literal::i8_unsuffixed(n);
+                        quote! { #v }
+                    }),
+                ),
+                Value::SmallInt(n) => (
+                    quote! { i16 },
+                    n.map(|n| {
+                        let v = Literal::i16_unsuffixed(n);
+                        quote! { #v }
+                    }),
+                ),
+                Value::Int(n) => (
+                    quote! { i32 },
+                    n.map(|n| {
+                        let v = Literal::i32_unsuffixed(n);
+                        quote! { #v }
+                    }),
+                ),
+                Value::BigInt(n) => (
+                    quote! { i64 },
+                    n.map(|n| {
+                        let v = Literal::i64_unsuffixed(n);
+                        quote! { #v }
+                    }),
+                ),
+                Value::TinyUnsigned(n) => (
+                    quote! { u8 },
+                    n.map(|n| {
+                        let v = Literal::u8_unsuffixed(n);
+                        quote! { #v }
+                    }),
+                ),
+                Value::SmallUnsigned(n) => (
+                    quote! { u16 },
+                    n.map(|n| {
+                        let v = Literal::u16_unsuffixed(n);
+                        quote! { #v }
+                    }),
+                ),
+                Value::Unsigned(n) => (
+                    quote! { u32 },
+                    n.map(|n| {
+                        let v = Literal::u32_unsuffixed(n);
+                        quote! { #v }
+                    }),
+                ),
+                Value::BigUnsigned(n) => (
+                    quote! { u64 },
+                    n.map(|n| {
+                        let v = Literal::u64_unsuffixed(n);
+                        quote! { #v }
+                    }),
+                ),
+                Value::Float(n) => (
+                    quote! { f32 },
+                    n.map(|n| {
+                        let v = Literal::f32_unsuffixed(n);
+                        quote! { #v }
+                    }),
+                ),
+                Value::Double(n) => (
+                    quote! { f64 },
+                    n.map(|n| {
+                        let v = Literal::f64_unsuffixed(n);
+                        quote! { #v }
+                    }),
+                ),
+                Value::String(s) => match replace {
+                    Some(Replacement::Type(r)) => (
+                        r.clone(),
+                        s.map(|s| {
+                            let ident = Ident::new(&s.to_upper_camel_case(), Span::call_site());
+                            quote! { #r::#ident }
+                        }),
+                    ),
+                    Some(Replacement::Fn(f, Some(r))) => (
+                        r.clone(),
+                        s.map(|s| {
+                            let v = Literal::string(s.as_str());
+                            quote! { #r::#f(#v) }
+                        }),
+                    ),
+                    Some(Replacement::Fn(_, None)) => {
+                        // teoretically we could accept only a function, but we won't know the return type
+                        return Err(syn::Error::new(
+                            Span::call_site(),
+                            format!("Missing parameter type for field {:?}", col),
+                        ));
+                    }
+                    _ => (
+                        quote! { &'static str },
+                        s.map(|s| {
+                            let v = Literal::string(s.as_str());
+                            quote! { #v }
+                        }),
+                    ),
+                },
+                // disable ChronoDateTime for now, it would only produce methods for created_at and updated_at fields
+                // Value::ChronoDateTime(dt) => (quote! { chrono::NaiveDateTime }, Lit::Verbatim(Literal)),
+                _ => continue,
+            };
+            let (_, method, option) =
+                methods.entry(format!("{:?}", col)).or_insert_with(|| (t, Punctuated::<_, Comma>::new(), false));
+            if let Some(v) = value {
+                method.push(quote! {
+                    #name::#key_ident => #v
+                });
+            } else {
+                *option = true;
+            }
+        }
+
+        Ok(())
+    })?;
 
     // decorate constructors
     let constructors = constructors.into_iter().map(|(name, (cols, body))| {
@@ -348,33 +345,33 @@ where
     // decorate methods
     let methods: TokenStream = methods
         .into_iter()
-        .filter_map(|(name, (t, matches, option))| {
+        .map(|(name, (t, matches, option))| {
             let n = Ident::new(&name.to_snake_case(), Span::call_site());
             if option {
                 if matches.is_empty() {
-                    Some(quote! {
+                    quote! {
                         pub const fn #n(&self) -> Option<#t> {
                             None
                         }
-                    })
+                    }
                 } else {
-                    Some(quote! {
+                    quote! {
                         pub const fn #n(&self) -> Option<#t> {
                             Some(match self {
                                 #matches,
                                 _ => return None,
                             })
                         }
-                    })
+                    }
                 }
             } else {
-                Some(quote! {
+                quote! {
                     pub const fn #n(&self) -> #t {
                         match self {
                             #matches,
                         }
                     }
-                })
+                }
             }
         })
         .chain(constructors)
