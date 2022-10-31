@@ -16,7 +16,10 @@ use proc_macro2::{Ident, Literal, Span, TokenStream};
 
 use quote::quote;
 
-use sea_orm::{DatabaseConnection, EntityTrait, Iterable, ModelTrait, PrimaryKeyToColumn, QueryFilter, Value};
+use sea_orm::{
+    sea_query::IntoCondition, DatabaseConnection, EntityName, EntityTrait, Iterable, ModelTrait, PrimaryKeyToColumn,
+    QueryFilter, Value,
+};
 
 use serde::{de::DeserializeOwned, Serialize};
 
@@ -43,13 +46,13 @@ use tracing::{error, info};
 pub async fn symbols<M, F, Fut>(item: &mut ItemEnum, args: &[NestedMeta], get_conn: F) -> syn::Result<TokenStream>
 where
     M: EntityTrait + EntityFilter + Default,
-    M::Model: Serialize + DeserializeOwned,
-    M::Column: PartialEq,
+    <M as EntityTrait>::Model: Serialize + DeserializeOwned,
+    <M as EntityTrait>::Column: PartialEq,
     F: Fn() -> Fut,
     Fut: Future<Output = syn::Result<DatabaseConnection>>,
 {
     let name = &item.ident;
-    let primary_keys = M::PrimaryKey::iter().map(|k| k.into_column()).collect::<Vec<_>>();
+    let primary_keys = <M as EntityTrait>::PrimaryKey::iter().map(|k| k.into_column()).collect::<Vec<_>>();
 
     let mut constructors = HashMap::new();
     let mut methods = HashMap::new();
@@ -118,7 +121,7 @@ where
             }
 
             // create a method for every non-primary_key column
-            for col in M::Column::iter() {
+            for col in <M as EntityTrait>::Column::iter() {
                 let replace = get_replacement::<M>(col, args);
 
                 // skip self-describing methods (would be an as_str clone)
@@ -447,16 +450,16 @@ where
 
 /// Data retrieve function with cache capabilities
 /// File access is sync to not have to depend on an async runtime
-async fn get_data<M, F, Fut>(get_conn: F) -> syn::Result<Vec<M::Model>>
+async fn get_data<M, F, Fut>(get_conn: F) -> syn::Result<Vec<<M as EntityTrait>::Model>>
 where
     M: EntityTrait + EntityFilter + Default,
-    M::Model: Serialize + DeserializeOwned,
+    <M as EntityTrait>::Model: Serialize + DeserializeOwned,
     F: Fn() -> Fut,
     Fut: Future<Output = syn::Result<DatabaseConnection>>,
 {
     let instance = M::default();
     let mut cache = env::temp_dir();
-    cache.push(instance.table_name());
+    cache.push(EntityName::table_name(&instance));
     cache.set_extension("cache");
     if cache.exists() {
         info!("Cache file {} exists, loading data from there", cache.display());
@@ -473,7 +476,11 @@ where
     }
 
     let conn = get_conn().await?;
-    let data = M::find().filter(M::filter()).all(&conn).await.map_err(|e| syn::Error::new(Span::call_site(), e))?;
+    let data = <M as EntityTrait>::find()
+        .filter(M::filter())
+        .all(&conn)
+        .await
+        .map_err(|e| syn::Error::new(Span::call_site(), e))?;
     let buf = bincode::serialize(&data)
         .map_err(|e| syn::Error::new(Span::call_site(), format!("Error serializing {}: {}", cache.display(), e)))?;
     fs::write(&cache, buf)
