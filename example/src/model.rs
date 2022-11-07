@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 
 use symbols::EntityFilter;
 
-#[derive(Clone, Debug, PartialEq, DeriveEntityModel, Deserialize, Serialize)]
+#[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel, Deserialize, Serialize)]
 #[sea_orm(table_name = "best_selling_video_games")]
 pub struct Model {
     pub rank: i8,
