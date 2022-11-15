@@ -17,8 +17,10 @@ heck = "0.4.0"
 itertools = "0.10.3"
 proc-macro2 = { version = "1.0.40", default-features = false }
 quote = "1.0.20"
-sea-orm = "0.10.2"
+#sea-orm = "0.10.2"
+sea-orm = { git = "https://github.com/nappa85/sea-orm.git", branch = "isolation-level" }
 serde = "1.0.139"
 syn = { version = "1.0.98", features = ["full"] }
-symbols-models = "0.10.0"
+#symbols-models = "0.10.0"
+symbols-models = { path = "../symbols-models" }
 tracing = "0.1.35"
