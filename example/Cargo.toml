@@ -8,12 +8,10 @@ edition = "2021"
 proc-macro = true
 
 [dependencies]
-proc-macro2 = { version = "1.0.40", default-features = false }
-quote = "1.0.20"
-#sea-orm = { version = "0.10.2", features = ["sqlx-mysql", "runtime-tokio-rustls"] }
-sea-orm = { git = "https://github.com/nappa85/sea-orm.git", branch = "isolation-level", features = ["sqlx-mysql", "runtime-tokio-rustls"] }
-serde = { version = "1.0.139", features = ["derive"] }
-syn = { version = "1.0.98", features = ["full"] }
-#symbols = "0.10.0"
-symbols = { path = "../symbols" }
-tokio = "1.20.0"
+proc-macro2 = { version = "1.0.47", default-features = false }
+quote = "1.0.21"
+sea-orm = { version = "0.10.5", features = ["sqlx-mysql", "runtime-tokio-rustls"] }
+serde = { version = "1.0.148", features = ["derive"] }
+syn = { version = "1.0.105", features = ["full"] }
+symbols = "0.10.5"
+tokio = "1.22.0"
