@@ -88,7 +88,7 @@ where
                     });
                 }
             } else {
-                return Err(syn::Error::new(Span::call_site(), format!("Unrecognized value type {:?}", val)));
+                return Err(syn::Error::new(Span::call_site(), format!("Unrecognized value type {val:?}")));
             }
         }
         // push primary keys into enum variants
@@ -106,7 +106,7 @@ where
                     let cols = combo.iter().map(|(_, col)| **col).collect::<Vec<_>>();
                     let method = combo
                         .iter()
-                        .map(|(_, col)| format!("{:?}", col).to_snake_case())
+                        .map(|(_, col)| format!("{col:?}").to_snake_case())
                         .collect::<Vec<_>>()
                         .join("_and_");
                     let key = combo.iter().map(|(index, _)| key_s[*index].clone()).collect::<Vec<_>>();
@@ -225,7 +225,7 @@ where
                         // teoretically we could accept only a function, but we won't know the return type
                         return Err(syn::Error::new(
                             Span::call_site(),
-                            format!("Missing parameter type for field {:?}", col),
+                            format!("Missing parameter type for field {col:?}"),
                         ));
                     }
                     _ => (
@@ -241,7 +241,7 @@ where
                 _ => continue,
             };
             let (_, method, option) =
-                methods.entry(format!("{:?}", col)).or_insert_with(|| (t, Punctuated::<_, Comma>::new(), false));
+                methods.entry(format!("{col:?}")).or_insert_with(|| (t, Punctuated::<_, Comma>::new(), false));
             if let Some(v) = value {
                 method.push(quote! {
                     #name::#key_ident => #v
@@ -257,11 +257,11 @@ where
     // decorate constructors
     let constructors = constructors.into_iter().map(|(name, (cols, body))| {
         let is_full = cols.len() == primary_keys.len();
-        let fn_name = Ident::new(&format!("get_by_{}", name), Span::call_site());
+        let fn_name = Ident::new(&format!("get_by_{name}"), Span::call_site());
         let signature = cols
             .iter()
             .map(|col| {
-                let field_name = Ident::new(&format!("{:?}", col).to_snake_case(), Span::call_site());
+                let field_name = Ident::new(&format!("{col:?}").to_snake_case(), Span::call_site());
                 match get_replacement::<M>(*col, args) {
                     Some(Replacement::Type(r)) => quote! { #field_name: #r },
                     _ => quote! { #field_name: &str },
@@ -271,7 +271,7 @@ where
         let m = cols
             .iter()
             .map(|col| {
-                let field_name = Ident::new(&format!("{:?}", col).to_snake_case(), Span::call_site());
+                let field_name = Ident::new(&format!("{col:?}").to_snake_case(), Span::call_site());
                 quote! { #field_name }
             })
             .collect::<Punctuated<_, Comma>>();
@@ -402,7 +402,7 @@ where
     M: EntityTrait,
     M::Column: PartialEq,
 {
-    let col_name = format!("{:?}", col);
+    let col_name = format!("{col:?}");
     let field_name = col_name.to_snake_case();
     // search for replacements
     args.iter().find_map(|arg| {
