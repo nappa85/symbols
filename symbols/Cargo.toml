@@ -20,5 +20,5 @@ quote = "1.0.23"
 sea-orm = "0.11.0"
 serde = "1.0.152"
 syn = { version = "1.0.107", features = ["full"] }
-symbols-models = "0.10.5"
+symbols-models = "0.11.0"
 tracing = "0.1.37"
