@@ -1,6 +1,6 @@
 [package]
 name = "symbols-models"
-version = "0.12.0"
+version = "1.0.0"
 edition = "2021"
 authors = ["Marco Napetti"]
 repository = "https://github.com/nappa85/symbols"
@@ -8,10 +8,14 @@ documentation = "https://docs.rs/symbols-models"
 readme = "../README.md"
 license = "WTFPL"
 description = "Proc-macro utility to populate enums from database data (shared traits)"
-categories = ["data-structures", "development-tools::procedural-macro-helpers", "database"]
+categories = [
+    "data-structures",
+    "development-tools::procedural-macro-helpers",
+    "database",
+]
 keywords = ["proc-macro", "enum", "database"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-sea-orm = "0.12.0"
+sea-orm = "1.0.0"

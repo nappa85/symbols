@@ -1,10 +1,6 @@
 [workspace]
+resolver = "2"
 
-members = [
-    "symbols",
-    "symbols-models"
-]
+members = ["symbols", "symbols-models"]
 
-exclude = [
-    "example"
-]
+exclude = ["example"]
